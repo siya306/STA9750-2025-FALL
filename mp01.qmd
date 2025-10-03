@@ -2,7 +2,21 @@
 title: "Mini-Project #01"
 author: "Siya Aneja"
 ---
-# Acquire Data
+# Introduction
+Netflix has transformed global entertainment by providing on-demand streaming in nearly every country.The goal of this mini-project is to explore Netflix Top 10 data across countries and globally.  
+We analyze trends in viewership, identify long-running programs, and highlight the most popular content worldwide.  
+
+This report not only presents data but also interprets the insights, with a press-release style summary at the end.
+
+---
+
+# 1. Acquire Data
+
+The datasets used include:  
+
+- **Global Top 10:** weekly Top 10 shows and films worldwide.  
+- **Country Top 10:** weekly Top 10 shows and films per country.
+
 ```{r}
 if(!dir.exists(file.path("data", "mp01"))){
     dir.create(file.path("data", "mp01"), showWarnings=FALSE, recursive=TRUE)
@@ -24,8 +38,9 @@ if(!file.exists(COUNTRY_TOP_10_FILENAME)){
                   destfile=COUNTRY_TOP_10_FILENAME)
 }
 ```
+Commentary: Storing the data locally ensures reproducibility. Anyone re-running this report can automatically download the correct datasets if missing.
 
-# Data Import and Preparation
+# 2. Data Import and Preparation
 ```{r}
 if(!require("tidyverse")) install.packages("tidyverse")
 library(readr)
@@ -52,8 +67,12 @@ COUNTRY_TOP_10 <- read_tsv(
 str(COUNTRY_TOP_10)
 glimpse(COUNTRY_TOP_10)
 ```
+Commentary:
+a. Missing values such as "N/A" are replaced with NA for cleaner analysis.
+b. The global dataset includes both films and TV shows, while the country dataset allows us to compare performance across regions.
 
-# Initial Data Exploration
+# 3. Initial Data Exploration
+
 ```{r}
 library(DT)
 GLOBAL_TOP_10 |> 
@@ -89,7 +108,8 @@ GLOBAL_TOP_10 |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))    
  
 ```
- 
+Commentary: A first look at the dataset reveals key variables: show title, category, weekly hours viewed, runtime, and cumulative weeks in Top 10. This allows us to understand the dataset before deeper analysis.
+
 # Exploratory Questions
  
 # 1. How many different countries does Netflix operate in?  
@@ -102,6 +122,8 @@ num_countries <- COUNTRY_TOP_10 %>%
 num_countries
 ```
 The number of countries Netflix operates in is `r num_countries`.
+
+This highlights Netflix’s global reach and shows that Netflix has successfully localized content for a diverse audience.
 
 # 2. Which non-English-language film has spent the most cumulative weeks in the global top 10? How many weeks did it spend?
 
@@ -116,6 +138,8 @@ non_english_top
 ```
 The non-English-language film that spent the most cumulative weeks in the global Top 10 is `r non_english_top$show_title`, with `r non_english_top$cumulative_weeks_in_top_10` weeks.
 
+Non-English hits demonstrate Netflix’s strategy of global content diversification. Success in global charts proves the universal appeal of regional films.
+
 # 3. What is the longest film (English or non-English) to have ever appeared in the Netflix global Top 10? How long is it in minutes?
 
 ```{r}
@@ -128,6 +152,8 @@ longest_film <- GLOBAL_TOP_10 %>%
 longest_film
 ```
 The longest film to appear in the global Top 10 is `r longest_film$show_title`, with a runtime of `r longest_film$runtime_minutes` minutes.
+
+Non-English hits demonstrate Netflix’s strategy of global content diversification. Success in global charts proves the universal appeal of regional films.
 
 # 4. For each of the four categories, what program has the most total hours of global viewership?
 
@@ -162,6 +188,8 @@ datatable(longest_run,
           rownames = FALSE)
 ```
 
+This shows how local favorites can dominate cultural viewing habits for years.
+
 # 6. Netflix provides over 200 weeks of service history for all but one country in our data set. Which country is this and when did Netflix cease operations in that country?
 ```{r}
 library(dplyr)
@@ -180,6 +208,8 @@ country_short_history
 ```
 The country with less than 200 weeks of Netflix service is `r country_short_history$country_name`, which ceased operations on `r country_short_history$last_week`.
 
+This suggests Netflix exited that market, possibly due to business or regulatory challenges.
+
 # 7. What is the total viewership of the TV show Squid Game? Note that there are three seasons total and we are looking for the total number of hours watched across all seasons.
 
 ```{r}
@@ -190,6 +220,8 @@ squid_game_hours <- GLOBAL_TOP_10 %>%
 squid_game_hours
 ```
 The total global viewership of Squid Game across all seasons is `r squid_game_hours$total_hours` hours.
+
+This number illustrates Netflix’s biggest-ever hit, validating investments in international originals.
 
 # 8. The movie Red Notice has a runtime of 1 hour and 58 minutes. Approximately how many views did it receive in 2021? Note that Netflix does not provide the weekly_views values that far back in the past, but you can compute it yourself using the total view time and the runtime.
 ```{r}
@@ -202,6 +234,8 @@ red_notice_views
 ```
 
 Red Notice received approximately `r round(red_notice_views$total_views)` views in 2021.
+
+This calculation uses runtime to estimate views, showing how viewership estimates can be derived indirectly when raw counts aren’t given.
 
 # 9. How many Films reached Number 1 in the US but did not originally debut there? That is, find films that first appeared on the Top 10 chart at, e.g., Number 4 but then became more popular and eventually hit Number 1? What is the most recent film to pull this off?
 ```{r}
@@ -234,6 +268,8 @@ most_recent_film  # use in text: `r most_recent_film`
 ```
 The number of Films that reached Number 1 in the US but did not debut there is `r nrow(us_films)`.
 
+These “late bloomers” highlight word-of-mouth and delayed popularity effects.
+
 # 10. Which TV show/season hit the top 10 in the most countries in its debut week? In how many countries did it chart?
 ```{r}
 library(dplyr)
@@ -253,4 +289,9 @@ top_show$num_countries
 ```
 The TV show/season that hit the top 10 in the most countries in its debut week is `r top_show$show_title`, appearing in `r top_show$num_countries` countries.
 
+This reflects a global marketing push or universal story appeal, making the show an instant worldwide hit.
 
+# Conclusion
+In conclusion, this project combined coding, statistical analysis, and data visualization to uncover key insights into Netflix’s global Top 10 performance. By systematically working through R and Quarto, we were able to clean, explore, and analyze large datasets, answering questions about international reach, the dominance of non-English titles, and the record-breaking runs of popular shows and films. The code not only automated repetitive calculations—such as estimating view counts, tracking debut performance across countries, and measuring cumulative viewership—but also provided transparency and reproducibility to the analysis. Results showed how cultural phenomena like Squid Game redefined global entertainment, while films like Red Notice illustrated the scale of Netflix’s star-driven strategies. At the same time, localized trends and shows that gradually rose to #1 revealed the diversity of audience preferences. Altogether, this blend of coding and storytelling demonstrates how data science helps transform raw streaming data into a meaningful narrative about Netflix’s impact on global viewing habits.
+
+# Press-Release
