@@ -78,7 +78,8 @@ library(DT)
 GLOBAL_TOP_10 |> 
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE))
-    
+```   
+```{r}
 library(stringr)
 format_titles <- function(df){
     colnames(df) <- str_replace_all(colnames(df), "_", " ") |> str_to_title()
@@ -90,14 +91,17 @@ GLOBAL_TOP_10 |>
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE)) |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))  
-    
+```
+```{r}
 GLOBAL_TOP_10 |> 
     select(-season_title) |>
     format_titles() |>
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE)) |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))    
-    
+```
+
+```{r}
 GLOBAL_TOP_10 |> 
     mutate(`runtime_(minutes)` = round(60 * runtime)) |>
     select(-season_title, 
