@@ -1,6 +1,9 @@
 ---
 title: "Mini-Project #01"
 author: "Siya Aneja"
+format: 
+  html:
+    self-contained: true
 ---
 # Introduction
 Netflix has transformed global entertainment by providing on-demand streaming in nearly every country.The goal of this mini-project is to explore Netflix Top 10 data across countries and globally.  
