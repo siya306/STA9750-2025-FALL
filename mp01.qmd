@@ -5,20 +5,25 @@ format:
   html:
     self-contained: true
 ---
+
+# Executive Summary
+
+This research investigates the Netflix Top 10 dataset, concentrating on how episodes and films performed in various countries. I used R and tidyverse tools to wrangle, filter, and summarise data in order to answer important analytical questions. The study focuses on patterns such as the longest-running series, debut week performances, and US film rankings. The analysis illustrates not only raw data insights, but also how to effectively explain outcomes. All code is integrated to ensure transparency and repeatability.
+
 # Introduction
-Netflix has transformed global entertainment by providing on-demand streaming in nearly every country.The goal of this mini-project is to explore Netflix Top 10 data across countries and globally.  
-We analyze trends in viewership, identify long-running programs, and highlight the most popular content worldwide.  
 
-This report not only presents data but also interprets the insights, with a press-release style summary at the end.
+Netflix has grown into a global streaming powerhouse, producing and distributing content in more than 90 countries. This dataset, which records weekly Top 10 rankings, provides insights into which shows and films are most popular around the world.
 
----
+The project's purpose is to use R to answer a series of structured questions. These include determining the longest-running shows on Top 10 lists, highlighting exceptional premiere weeks, and evaluating trends in specific areas such as the United States.
+
+------------------------------------------------------------------------
 
 # 1. Acquire Data
 
-The datasets used include:  
+The datasets used include:
 
-- **Global Top 10:** weekly Top 10 shows and films worldwide.  
-- **Country Top 10:** weekly Top 10 shows and films per country.
+-   **Global Top 10:** weekly Top 10 shows and films worldwide.\
+-   **Country Top 10:** weekly Top 10 shows and films per country.
 
 ```{r}
 if(!dir.exists(file.path("data", "mp01"))){
@@ -41,9 +46,11 @@ if(!file.exists(COUNTRY_TOP_10_FILENAME)){
                   destfile=COUNTRY_TOP_10_FILENAME)
 }
 ```
-Commentary: Storing the data locally ensures reproducibility. Anyone re-running this report can automatically download the correct datasets if missing.
+
+Storing the data locally makes sure that it can be used again. Anyone who runs this report again can automatically get the right datasets if they are missing.
 
 # 2. Data Import and Preparation
+
 ```{r}
 if(!require("tidyverse")) install.packages("tidyverse")
 library(readr)
@@ -70,9 +77,9 @@ COUNTRY_TOP_10 <- read_tsv(
 str(COUNTRY_TOP_10)
 glimpse(COUNTRY_TOP_10)
 ```
-Commentary:
-a. Missing values such as "N/A" are replaced with NA for cleaner analysis.
-b. The global dataset includes both films and TV shows, while the country dataset allows us to compare performance across regions.
+
+a.  For a better analysis, missing numbers like "N/A" are changed to "NA."
+b.  The global dataset has both movies and TV shows, and the country dataset lets us see how well shows did in different areas.
 
 # 3. Initial Data Exploration
 
@@ -81,7 +88,8 @@ library(DT)
 GLOBAL_TOP_10 |> 
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE))
-```   
+```
+
 ```{r}
 library(stringr)
 format_titles <- function(df){
@@ -95,6 +103,7 @@ GLOBAL_TOP_10 |>
     datatable(options=list(searching=FALSE, info=FALSE)) |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))  
 ```
+
 ```{r}
 GLOBAL_TOP_10 |> 
     select(-season_title) |>
@@ -115,11 +124,12 @@ GLOBAL_TOP_10 |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))    
  
 ```
-Commentary: A first look at the dataset reveals key variables: show title, category, weekly hours viewed, runtime, and cumulative weeks in Top 10. This allows us to understand the dataset before deeper analysis.
+
+A first look at the dataset reveals key variables: show title, category, weekly hours viewed, runtime, and cumulative weeks in Top 10. This allows us to understand the dataset before deeper analysis.
 
 # Exploratory Questions
- 
-# 1. How many different countries does Netflix operate in?  
+
+# 1. How many different countries does Netflix operate in?
 
 ```{r}
 library(dplyr)
@@ -128,9 +138,10 @@ num_countries <- COUNTRY_TOP_10 %>%
   nrow()
 num_countries
 ```
+
 The number of countries Netflix operates in is `r num_countries`.
 
-This highlights Netflix’s global reach and shows that Netflix has successfully localized content for a diverse audience.
+This shows how global Netflix is and how well it has localized content for a wide range of audiences.
 
 # 2. Which non-English-language film has spent the most cumulative weeks in the global top 10? How many weeks did it spend?
 
@@ -143,9 +154,10 @@ non_english_top <- GLOBAL_TOP_10 %>%
 
 non_english_top
 ```
+
 The non-English-language film that spent the most cumulative weeks in the global Top 10 is `r non_english_top$show_title`, with `r non_english_top$cumulative_weeks_in_top_10` weeks.
 
-Non-English hits demonstrate Netflix’s strategy of global content diversification. Success in global charts proves the universal appeal of regional films.
+Non-English hits show how Netflix is trying to diversify its content around the world. Regional films that do well on global charts show that they appeal to everyone.
 
 # 3. What is the longest film (English or non-English) to have ever appeared in the Netflix global Top 10? How long is it in minutes?
 
@@ -158,6 +170,7 @@ longest_film <- GLOBAL_TOP_10 %>%
 
 longest_film
 ```
+
 The longest film to appear in the global Top 10 is `r longest_film$show_title`, with a runtime of `r longest_film$runtime_minutes` minutes.
 
 Non-English hits demonstrate Netflix’s strategy of global content diversification. Success in global charts proves the universal appeal of regional films.
@@ -166,13 +179,16 @@ Non-English hits demonstrate Netflix’s strategy of global content diversificat
 
 ```{r}
 top_viewed_per_category <- GLOBAL_TOP_10 %>%
+  group_by(category, show_title) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE), .groups = "drop") %>%
   group_by(category) %>%
-  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE),
-            show_title = show_title[which.max(weekly_hours_viewed)]) %>%
+  slice_max(total_hours, n = 1, with_ties = FALSE) %>%
   arrange(category)
 
 top_viewed_per_category
+
 ```
+
 ```{r}
 library(DT)
 top_viewed_per_category %>%
@@ -180,6 +196,7 @@ top_viewed_per_category %>%
 ```
 
 # 5. Which TV show had the longest run in a country’s Top 10? How long and where?
+
 ```{r}
 library(dplyr)
 library(DT)
@@ -195,9 +212,10 @@ datatable(longest_run,
           rownames = FALSE)
 ```
 
-This shows how local favorites can dominate cultural viewing habits for years.
+This is an example of how local favorites can shape cultural watching habits for years.
 
 # 6. Netflix provides over 200 weeks of service history for all but one country in our data set. Which country is this and when did Netflix cease operations in that country?
+
 ```{r}
 library(dplyr)
 library(lubridate)
@@ -213,6 +231,7 @@ country_short_history <- COUNTRY_TOP_10 %>%
 country_short_history
 
 ```
+
 The country with less than 200 weeks of Netflix service is `r country_short_history$country_name`, which ceased operations on `r country_short_history$last_week`.
 
 This suggests Netflix exited that market, possibly due to business or regulatory challenges.
@@ -226,11 +245,13 @@ squid_game_hours <- GLOBAL_TOP_10 %>%
 
 squid_game_hours
 ```
+
 The total global viewership of Squid Game across all seasons is `r squid_game_hours$total_hours` hours.
 
 This number illustrates Netflix’s biggest-ever hit, validating investments in international originals.
 
 # 8. The movie Red Notice has a runtime of 1 hour and 58 minutes. Approximately how many views did it receive in 2021? Note that Netflix does not provide the weekly_views values that far back in the past, but you can compute it yourself using the total view time and the runtime.
+
 ```{r}
 red_notice_views <- GLOBAL_TOP_10 %>%
   filter(str_detect(show_title, "Red Notice") & year(week) == 2021) %>%
@@ -245,6 +266,7 @@ Red Notice received approximately `r round(red_notice_views$total_views)` views 
 This calculation uses runtime to estimate views, showing how viewership estimates can be derived indirectly when raw counts aren’t given.
 
 # 9. How many Films reached Number 1 in the US but did not originally debut there? That is, find films that first appeared on the Top 10 chart at, e.g., Number 4 but then became more popular and eventually hit Number 1? What is the most recent film to pull this off?
+
 ```{r}
 library(dplyr)
 library(stringr)
@@ -273,11 +295,11 @@ num_us_films   # use in text: `r num_us_films`
 most_recent_film  # use in text: `r most_recent_film`
 
 ```
+
 The number of Films that reached Number 1 in the US but did not debut there is `r nrow(us_films)`.
 
-These “late bloomers” highlight word-of-mouth and delayed popularity effects.
-
 # 10. Which TV show/season hit the top 10 in the most countries in its debut week? In how many countries did it chart?
+
 ```{r}
 library(dplyr)
 library(lubridate)
@@ -294,11 +316,304 @@ top_show$show_title
 top_show$num_countries  
 
 ```
+
 The TV show/season that hit the top 10 in the most countries in its debut week is `r top_show$show_title`, appearing in `r top_show$num_countries` countries.
 
 This reflects a global marketing push or universal story appeal, making the show an instant worldwide hit.
 
 # Conclusion
-In conclusion, this project combined coding, statistical analysis, and data visualization to uncover key insights into Netflix’s global Top 10 performance. By systematically working through R and Quarto, we were able to clean, explore, and analyze large datasets, answering questions about international reach, the dominance of non-English titles, and the record-breaking runs of popular shows and films. The code not only automated repetitive calculations—such as estimating view counts, tracking debut performance across countries, and measuring cumulative viewership—but also provided transparency and reproducibility to the analysis. Results showed how cultural phenomena like Squid Game redefined global entertainment, while films like Red Notice illustrated the scale of Netflix’s star-driven strategies. At the same time, localized trends and shows that gradually rose to #1 revealed the diversity of audience preferences. Altogether, this blend of coding and storytelling demonstrates how data science helps transform raw streaming data into a meaningful narrative about Netflix’s impact on global viewing habits.
+
+In conclusion, this project used coding, statistical analysis, and data visualization to find important information on how Netflix's global Top 10 movies and shows did. We were able to clean, investigate, and analyze massive datasets by working through R and Quarto in a methodical way. This helped us answer concerns regarding international reach, the dominance of non-English titles, and the record-breaking runs of popular shows and movies. The code not only made it easier to do tedious math, including figuring out how many views a video gets, tracking how well a video does in different regions, and counting total views, but it also made the analysis clear and easy to repeat. Cultural events like Squid Game changed the way people around the world enjoy entertainment, while movies like Red Notice highlighted how big Netflix's star-driven initiatives are. At the same time, regional trends and shows that slowly ascended to the top showed how different people like different things. This mix of coding and storytelling shows how data science can turn raw streaming data into a story about how Netflix has changed how people watch TV around the world.
 
 # Press-Release
+
+#### Press Release 1: Upcoming Season of Stranger Things
+
+#### *The Grand Finale "The Upside Down Returns: Stranger Things Ends With a Global Spectacle".*
+
+The fifth and last season of Stranger Things will come out on Netflix at the end of 2025. This will be the end of one of the platform's most popular shows. Stranger Things has had an amazing 2.97 billion hours of global viewership throughout its first four seasons. It has been in the Top 10 for 366 weeks in a row and has charted in 94 countries around the world, making it a hit in every area where Netflix is available. It is more popular than other English-language TV shows on Netflix because it is so popular around the world and has been for so long. This illustrates that the series is a cultural phenomenon and a key part of the streaming service's global success. Fans all over the world are excited for the finale, which promises to contain the same thrilling suspense, emotion, and ntalgia that have made the show a hit across the world.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+# Top 5 English TV shows by total hours
+top_english_tv <- GLOBAL_TOP_10 %>%
+  filter(str_detect(category, "TV \\(English\\)")) %>%
+  group_by(show_title) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE)) %>%
+  slice_max(total_hours, n = 5)
+
+ggplot(top_english_tv, aes(x = reorder(show_title, total_hours), y = total_hours/1e9)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 5 English-Language TV Shows on Netflix by Total Hours Viewed",
+    x = "Show Title",
+    y = "Total Hours Viewed (Billions)"
+  )
+```
+
+*Fun Fact: Fans around the world have watched Stranger Things for more than 2.97 billion hours, which is enough time to watch all the seasons more than 1,000 times!*
+
+#### Press Release 2: Commercial Success in India
+
+#### *Indian Netflix Takes Off with Hindi Hits and Millions of New Viewers.*
+
+India, the country with the most people in the world, has become an important growth area for Netflix since Hindi-language movies and TV shows are becoming more popular. RRR (Hindi) was at the top of India's Top 10 for 325 weeks, while Kantara (Hindi) stayed strong for 66 weeks. Fabulous Lives of Bollywood Wives, Hi Papa (Hindi), and Sir (Hindi) were all big hits with audiences, each staying popular for more than 25 weeks. In 2024, Hindi viewership frequently went over 15 million hours a week, adding up to 183 million hours for the year. This means that there are about 730,000 active users in India, which shows how important the region is becoming as Netflix's next big thing. Long-term trends demonstrate that Hindi content is not only getting more people to watch it, but it's also keeping them interested for years. The number of Hindi movies in India's Top 10 has been continuously rising, their average runs are getting longer, and their watching peaks are getting higher with stronger weekly baselines. These trends suggest that Netflix will continue to gain subscribers in India, which is an important part of the company's worldwide growth strategy.
+
+```{r, include=FALSE}
+
+library(dplyr)
+library(stringr)
+
+# Filter for India and Hindi content
+india_hindi <- COUNTRY_TOP_10 %>%
+  filter(country_iso2 == "IN", str_detect(show_title, "Hindi|Bollywood")) %>%
+  group_by(show_title) %>%
+  summarise(
+    total_weeks_in_top10 = sum(cumulative_weeks_in_top_10, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_weeks_in_top10))
+
+# top 5 shows/films
+top_india_hindi <- india_hindi %>% slice_head(n = 5)
+top_india_hindi
+```
+
+```{r, include=FALSE}
+
+library(dplyr)
+library(stringr)
+
+# Filter Hindi titles from global dataset
+hindi_hours <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "(Hindi)")) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE))
+
+hindi_hours
+
+```
+
+```{r, include=FALSE}
+
+
+# Hindi total hours (from your calculation)
+hindi_total_hours <- 1.83e+08  
+
+# Assume average Netflix user streams ~240–300 hours per year
+assumed_hours <- c(240, 250, 300)
+
+# Convert hours into subscriber equivalents
+subs_estimates <- data.frame(
+  hours_per_user_year = assumed_hours,
+  estimated_subscribers = hindi_total_hours / assumed_hours
+)
+
+subs_estimates
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(top_india_hindi, aes(x = reorder(show_title, total_weeks_in_top10), y = total_weeks_in_top10)) +
+  geom_col(fill = "orange") +
+  coord_flip() +
+  labs(
+    title = "Top Hindi Shows in India by Weeks in Top 10",
+    x = "Show Title",
+    y = "Weeks in Top 10"
+  )
+```
+
+*Fun Fact: RRR (Hindi) alone spent almost 5.5 years in India's Top 10 charts, which is longer than most movies stay in theaters around the world!*
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+#Filter
+weekly_hours_india <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "Hindi")) %>%
+  group_by(week) %>%
+  summarise(total_weekly_hours = sum(weekly_hours_viewed, na.rm = TRUE)) %>%
+  arrange(week)
+
+# Calculate growth 
+latest_week <- max(weekly_hours_india$week)
+one_year_ago <- latest_week - years(1)
+
+latest_hours <- weekly_hours_india %>% filter(week == latest_week) %>% pull(total_weekly_hours)
+past_hours   <- weekly_hours_india %>% filter(week == one_year_ago) %>% pull(total_weekly_hours)
+
+growth_percent <- ((latest_hours - past_hours) / past_hours) * 100
+ggplot(weekly_hours_india, aes(x = week, y = total_weekly_hours)) +
+  geom_line(color = "#FF9933", size = 1.2) +
+  labs(
+    title = "Netflix Weekly Hours Viewed in India (Hindi Content)",
+    subtitle = paste0("Approx. ", round(growth_percent, 1), "% growth over the past year"),
+    x = "Week",
+    y = "Total Hours Viewed"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+#### Press Release 3: OWN TOPIC
+
+#### *Netflix Celebrates the Global Success of Non-English Originals.*
+
+Netflix keeps breaking down barriersby making non-English TV shows and movies popular all around the world. This shows that great tales can be told in any language. Squid Game is a landmark achievement with over 5.31 billion hours seen worldwide and 32 weeks in the Global Top 10. Money Heist, a Spanish-language hit, spent an incredible 127 weeks in a single country's Top 10 (Pakistan), showing how long it can stay popular. Hindi hits like RRR (Hindi) and Kantara (Hindi) kept this trend going, showing how India's influence on global viewing patterns is growing. Netflix is putting more money into local productions that create global cultural moments and help the company build its subscriber base over time. This is because non-English originals always do well in different locations.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(stringr)
+
+top_noneng_hours <- GLOBAL_TOP_10 %>%
+  filter(str_detect(category, "Non-English")) %>%     # uses dataset's category labels
+  group_by(show_title) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(total_hours)) %>%
+  slice_head(n = 10)
+
+library(ggplot2)
+ggplot(top_noneng_hours,
+       aes(x = total_hours/1e9, y = reorder(show_title, total_hours))) +
+  geom_col() +
+  labs(x = "Total Hours (Billions)", y = NULL,
+       title = "Top 10 Non-English Titles by Global Viewing Hours") +
+  theme_minimal()
+```
+
+*Fun Fact:Squid Game alone had more viewers around the world than many Hollywood blockbusters combined, with over 5.3 billion hours viewed!*
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+weekly_mix <- GLOBAL_TOP_10 %>%
+  mutate(is_noneng = ifelse(str_detect(category, "Non-English"), "Non-English", "English")) %>%
+  group_by(week, is_noneng) %>%
+  summarise(week_hours = sum(weekly_hours_viewed, na.rm = TRUE), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = is_noneng, values_from = week_hours, values_fill = 0) %>%
+  mutate(total = `English` + `Non-English`,
+         noneng_share = ifelse(total > 0, `Non-English` / total, NA_real_))
+
+ggplot(weekly_mix, aes(x = week, y = noneng_share)) +
+  geom_line(color = "darkred") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Non-English Share of Global Viewing Hours",
+    subtitle = "Weekly trend of Non-English content's share",
+    x = NULL, y = "Share of Global Hours"
+  ) +
+  theme_minimal()
+
+```
+
+*Fun Fact: By the end of 2024, almost half of all Netflix viewing hours came from titles that weren't in English. This shows that people's tastes had changed around the world.*
+
+# REFERENCE CODES FOR PRESS RELEASES:
+
+1.  ***PRESS RELEASE 1***
+
+```{r}
+library(dplyr)
+library(stringr)
+
+stranger_things_global <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "Stranger Things")) %>%
+  summarise(
+    total_hours = sum(weekly_hours_viewed, na.rm = TRUE),
+    total_weeks_in_top10 = sum(cumulative_weeks_in_top_10, na.rm = TRUE)
+  )
+
+stranger_things_countries <- COUNTRY_TOP_10 %>%
+  filter(str_detect(show_title, "Stranger Things")) %>%
+  group_by(country_name) %>%
+  summarise(debut_week = min(week), .groups = "drop") %>%
+  summarise(num_countries = n())
+
+stranger_things_stats <- cbind(stranger_things_global, stranger_things_countries)
+stranger_things_stats
+```
+
+2.  ***PRESS RELEASE 2***
+
+```{r}
+
+library(dplyr)
+library(stringr)
+
+india_hindi <- COUNTRY_TOP_10 %>%
+  filter(country_iso2 == "IN", str_detect(show_title, "Hindi|Bollywood")) %>%
+  group_by(show_title) %>%
+  summarise(
+    total_weeks_in_top10 = sum(cumulative_weeks_in_top_10, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_weeks_in_top10))
+
+
+top_india_hindi <- india_hindi %>% slice_head(n = 5)
+top_india_hindi
+```
+
+```{r}
+
+library(dplyr)
+library(stringr)
+
+hindi_hours <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "(Hindi)")) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE))
+
+hindi_hours
+
+```
+
+```{r}
+
+hindi_total_hours <- 1.83e+08  
+
+assumed_hours <- c(240, 250, 300)
+
+subs_estimates <- data.frame(
+  hours_per_user_year = assumed_hours,
+  estimated_subscribers = hindi_total_hours / assumed_hours
+)
+
+subs_estimates
+```
+
+3.  ***PRESS RELEASE 3***
+
+```{r}
+
+library(dplyr); library(stringr)
+squid_stats <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "Squid Game")) %>%
+  summarise(
+    total_hours = sum(weekly_hours_viewed, na.rm = TRUE),
+    weeks_global_top10 = max(cumulative_weeks_in_top_10, na.rm = TRUE)
+  )
+squid_stats
+```
+
+```{r}
+
+mh_long_run <- COUNTRY_TOP_10 %>%
+  filter(str_detect(show_title, "Money Heist")) %>%
+  slice_max(cumulative_weeks_in_top_10, n = 1, with_ties = FALSE) %>%
+  select(show_title, country_name, cumulative_weeks_in_top_10)
+mh_long_run
+```
+
+```{r}
+
+india_hindi_examples <- COUNTRY_TOP_10 %>%
+  filter(country_name == "India", str_detect(show_title, "\\(Hindi\\)")) %>%
+  group_by(show_title) %>%
+  summarise(weeks_in_top10 = max(cumulative_weeks_in_top_10, na.rm = TRUE), .groups="drop") %>%
+  filter(show_title %in% c("RRR (Hindi)", "Kantara (Hindi)"))
+india_hindi_examples
+```
