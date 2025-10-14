@@ -10,15 +10,15 @@ website:
   navbar:
     background: light
     left:
-     - text: "Home"
-       href: index.qmd
+      - text: "Home"
+        href: index.qmd
       - text: "MP01"
         href: mp01.qmd
   page-footer:
     center: "© 2025 | STA 9750 | Quarto + GitHub Pages"
 format:
   html:
-    theme: journal
+    theme: sandstone
     toc: false
 
 editor:
