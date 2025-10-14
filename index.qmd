@@ -1,11 +1,37 @@
 ---
 title: "STA 9750 Submission Material"
+engine: knitr
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
 # Welcome!
 
-Welcome to my STA 9750 project site!  
+Welcome to my STA 9750 project site!\
 This site will host my submissions and project materials for the course.
 
----
+------------------------------------------------------------------------
 
+## Baruch College Map
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+if (!requireNamespace("leaflet", quietly = TRUE)) {
+  options(repos = c(CRAN = "https://cloud.r-project.org"))
+  install.packages("leaflet")
+}
+library(leaflet)
+
+baruch_longitude <- -73.98333
+baruch_latitude  <-  40.74028
+
+leaflet() |>
+  addTiles() |>
+  setView(baruch_longitude, baruch_latitude, zoom = 17) |>
+  addPopups(baruch_longitude, baruch_latitude,
+            "I am a Master's student at <b>Baruch College</b>!")
+```
