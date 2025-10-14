@@ -16,5 +16,10 @@ data/**
 **/*rds
 /.quarto/*
 **/gganim*
-
+data/
 /.quarto/
+/Rplot.png
+Rplot.png
+# allow Quarto build assets inside docs/
+!docs/*_files/**
+!docs/site_libs/**
