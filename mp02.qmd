@@ -328,9 +328,10 @@ if (!dir.exists(file.path("data", "mp02"))) {
 list.files("data/mp02")
 
 ```
+
 ## Data Relationship Diagram
 
-![](data/mp02/Extra_credit_1.png){width="90%" fig-align="center"}
+![](docs/data/mp02/Extra_credit_1.png){fig-align="center"}
 
 *Figure: Data relationship diagram showing how ACS, BLS, and Census datasets connect via `std_cbsa` and `year`.*
 
@@ -350,6 +351,7 @@ PERMITS |>
   arrange(desc(total_units)) |>
   slice(1)
 ```
+
 `Between 2010 and 2019, the Houston–Pasadena–The Woodlands, TX Metropolitan Area permitted approximately 482,075 new housing units, the highest of any CBSA in the United States during that decade.`
 
 ### 2.In what year did Albuquerque, NM (CBSA Number 10740) permit the most new housing units?
@@ -360,6 +362,7 @@ PERMITS |>
   arrange(desc(new_housing_units_permitted)) |>
   slice(1)
 ```
+
 `The Albuquerque, NM Metropolitan Area (CBSA 10740) permitted the most new housing units in 2021, with approximately 4,021 new units. Although 2021 shows the highest recorded number, this may partly reflect Covid-19-related reporting anomalies — for instance, delayed or batched permit filings after the 2020 survey pause.`
 
 ### 3.Which state (not CBSA) had the highest average individual income in 2015?
@@ -459,6 +462,7 @@ nyc_finance_share <- WAGES |>
 
 nyc_finance_share |> slice(1)
 ```
+
 `Peak Year: 2014` `Fraction of Total Wages (Finance & Insurance): ≈ 4.6%`
 
 # TASK 3: Initial Visualizations
@@ -498,9 +502,7 @@ ggplot(rent_income_2009, aes(x = household_income, y = monthly_rent)) +
 
 `📊 Interpretation:The scatterplot shows a clear positive correlation between household income and monthly rent. CBSAs with higher household incomes tend to have significantly higher rent, reflecting affordability and cost-of-living variations across metropolitan regions.`
 
-
 ### 2. The relationship between total employment and total employment in the health care and social services sector (NAICS 62) across different CBSAs.
-
 
 ```{r}
 # Create employment summary dataset
@@ -582,7 +584,6 @@ ggplot(household_size, aes(x = year, y = avg_household_size,
 ```
 
 `📊 Interpretation: The visualization uses the gghighlight package to emphasize New York City (red) and Los Angeles (blue) among all U.S. CBSAs. All other CBSAs appear in soft gray to provide context without visual clutter. This clearly illustrates that both NYC and LA have relatively smaller and stable household sizes from 2009–2023, compared to the national trend. The technique effectively avoids the “spaghetti plot” problem, creating a focused, publication-quality visualization worthy of extra credit.`
-
 
 # TASK 4: Building Indices of Housing Affordability and Housing Stock Growth
 
@@ -738,7 +739,6 @@ housing_growth <- housing_base |>
 
 ```
 
-
 Top 15 CBSAs by Instantaneous Housing Growth (2023)
 
 ```{r}
@@ -786,7 +786,6 @@ DT::datatable(
 )
 
 ```
-
 
 Top 15 CBSAs by Composite Housing Growth (2023)
 
