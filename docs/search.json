@@ -103,5 +103,166 @@
     "title": "Mini-Project #02 — Making Backyards Affordable for All",
     "section": "Supporting the YIMBY Movement for Affordable Housing",
     "text": "Supporting the YIMBY Movement for Affordable Housing\n\nIntroduction\nAs a political lobbyist for the national Yes In My Backyard (YIMBY) organization, I am urging Congress to establish a federal program that incentivizes local municipalities to adopt YIMBY policies. These policies focus on expanding housing supply through zoning reform, relaxed permitting processes, and support for multifamily and high-density housing development.\n\n\nProposed Congressional Sponsors\nTo drive this legislation forward, we need the support of local congressional representatives. I propose the following pair of sponsors:\n\nPrimary Sponsor: Representative from Austin-Round Rock-Georgetown, TX\n\nRationale: Austin is a prime example of a YIMBY success. Over the past decade, the city has dramatically increased its housing supply, resulting in a decrease in rent burden despite significant population growth. Austin’s housing growth metrics and rent burden index show a consistent trend of improvement, demonstrating that more housing can help maintain affordability.\n\nCo-Sponsor: Representative from New York-Newark-Jersey City, NY-NJ-PA\n\nRationale: New York City, despite its economic vibrancy, has faced an affordability crisis due to slow housing growth relative to population increase. Rent burden in New York continues to rise, and the lack of sufficient housing supply exacerbates the affordability gap. The city’s struggle represents the need for policy change, making it a crucial voice for this bill.\n\n\n\n\nSupporting Labor & Industry Groups\nTo gather support for this bill, we must appeal to labor unions and industry trade organizations. Two key occupations that would benefit from this bill are:\n\nTeachers and Education Workers:\n\nImpact: Teachers and other education workers often face high rent burdens, particularly in cities with tight housing markets. By promoting more housing construction, this bill would alleviate rent pressures, making it easier for teachers to afford living near schools, thus improving teacher retention and reducing turnover.\nBenefit: Teachers would benefit directly from lower rent and increased housing supply, making it more feasible for them to live in the same communities where they work. Additionally, increased affordability would free up more disposable income, contributing to overall economic stability.\n\nHealthcare Workers (Nurses, Technicians):\n\nImpact: Healthcare professionals are often underpaid relative to the high cost of living in metropolitan areas. High housing costs contribute to burnout, low morale, and difficulties in staffing. By expanding the housing supply, this bill would help keep housing costs in check, enabling healthcare workers to afford homes near their workplaces.\nBenefit: Lower housing costs would directly increase healthcare workers’ disposable income and improve job satisfaction, reducing turnover rates and increasing the quality of care. This would also improve continuity of care by enabling healthcare workers to live within commuting distance of their hospitals or clinics.\n\n\n\n\nMetrics for Identifying “Good” (High-YIMBY) Cities\nTo ensure that the program effectively identifies cities that can benefit from federal support, the following metrics should be used:\n\nRent Burden Index (RBI):\n\nDefinition: The Rent Burden Index measures the share of income that households spend on rent. It is calculated as the rent-to-income ratio, where higher values indicate higher rent burden.\nStandardization: We standardize this index to a baseline of 100, where 100 represents the national average in 2009. Cities with values above 100 are considered more burdened, while values below 100 indicate lower rent burdens.\n\nHousing Growth Index (HGI):\n\nDefinition: The Housing Growth Index compares the number of housing units permitted in a given year relative to the current population of the city. This index also considers the housing units permitted relative to population growth over a five-year period, helping to capture both short-term and long-term growth patterns.\nStandardization: The Housing Growth Index is normalized to a baseline of 100, representing the average growth across all CBSAs.\n\nMillennial Appeal Index (MAI):\n\nDefinition: This metric gauges the proportion of employment in arts and entertainment, which is typically driven by younger adults, such as Millennials.\nBenefit: High levels of arts and entertainment employment are associated with cultural vibrancy and young adult attraction, making cities with high MAI more likely to benefit from housing policies that support young professionals.\n\n\n\n\nPolicy Recommendations\nCongress should establish a Federal YIMBY Incentive Program with the following objectives:\n\nProvide Competitive Grants: Offer funding to cities that have shown a decrease in rent burden and a commitment to housing development. These cities would be eligible for grants to support zoning modernization, streamlined permitting, and multifamily housing construction.\nSupport Housing Expansion: Encourage cities to expand housing development to meet growing demand, particularly in areas with high rent burdens and limited housing stock.\nCreate Infrastructure Investment: Support infrastructure development tied to housing growth, including improvements to transportation, utilities, and community services, to accommodate new residents and reduce the strain on existing systems.\nPromote Smart Growth: Focus on sustainable development that includes both housing and necessary infrastructure, with an emphasis on transit-oriented development and environmentally-friendly building practices.\n\n\n\nConclusion\nThis bill represents a proactive and bipartisan approach to addressing the housing affordability crisis across the United States. By targeting cities with high rent burdens and promoting housing development in growing metros, we can create more affordable, vibrant, and sustainable cities for American workers and their families. The contrast between YIMBY success in Austin and the struggles of New York City demonstrates the need for federal support to incentivize housing construction, reduce rent burdens, and improve economic opportunities for all.\nThrough this bill, we will empower local governments to act on housing policy, support essential workers, and ultimately provide affordable housing for more Americans. A strong commitment to building more homes will benefit both individuals and communities, ensuring greater economic mobility and stability for all."
+  },
+  {
+    "objectID": "mp03.html",
+    "href": "mp03.html",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "",
+    "text": "Code\nlibrary(sf)\nlibrary(dplyr)\nlibrary(httr2)\nlibrary(purrr)\nlibrary(glue)\nlibrary(ggplot2)\nlibrary(knitr)\n\ndir.create(\"data/mp03\", recursive = TRUE, showWarnings = FALSE)\nIntroduction\nNew York City’s Parks and Recreation Department manages nearly 900,000 trees across five boroughs. This project explores the NYC Tree Map dataset and the City Council District boundaries to understand how trees are distributed throughout the city and identify opportunities for improving canopy equity.\nThe analysis will:"
+  },
+  {
+    "objectID": "mp03.html#council-district-boundaries",
+    "href": "mp03.html#council-district-boundaries",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "1.1 Council District Boundaries",
+    "text": "1.1 Council District Boundaries\nWe begin by reading the shapefile containing all 51 NYC Council Districts and converting it to the WGS 84 coordinate system for compatibility with other datasets.\n\n\nCode\ndownload_nyc_council &lt;- function() {\n  dir.create(\"data/mp03\", showWarnings = FALSE, recursive = TRUE)\n\n  zip_path &lt;- \"data/mp03/nycc_25c.zip\"\n  unzip_dir &lt;- \"data/mp03/nycc_25c\"\n\n  # 1. Download if needed\n  if (!file.exists(zip_path)) {\n    url &lt;- \"https://www.nyc.gov/assets/planning/download/zip/data-maps/open-data/nycc_25c.zip\"\n    download.file(url, zip_path, mode = \"wb\")\n  }\n\n  # 2. Unzip if needed\n  if (!dir.exists(unzip_dir)) {\n    unzip(zip_path, exdir = unzip_dir)\n  }\n\n  # 3. Find the actual .shp file (your case: nycc_25c/nycc_25c/nycc.shp)\n  shp_file &lt;- list.files(unzip_dir, pattern = \"\\\\.shp$\", recursive = TRUE, full.names = TRUE)[1]\n\n  if (is.na(shp_file)) stop(\"Shapefile not found. Check folder structure.\")\n\n  # 4. Read with sf\n  nyc &lt;- sf::st_read(shp_file, quiet = TRUE)\n\n  # 5. Transform to WGS84\n  nyc &lt;- sf::st_transform(nyc, crs = \"WGS84\")\n\n  return(nyc)\n}\n\n# Run it\ndistricts &lt;- download_nyc_council()\ndistricts"
+  },
+  {
+    "objectID": "mp03.html#visualize-council-districts",
+    "href": "mp03.html#visualize-council-districts",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "1.2 Visualize Council Districts",
+    "text": "1.2 Visualize Council Districts\n\n\nCode\nggplot(districts) +\n  geom_sf(data = districts,fill = \"lightgreen\", color = \"grey40\", linewidth = 0.4) +\n  labs(\n    title = \"NYC City Council Districts\",\n    subtitle = \"51 polygons across five boroughs\",\n    caption = \"Source: NYC Department of City Planning\"\n  ) +\n  theme_minimal(base_size = 12) +\n  theme(\n    panel.grid.major = element_line(linewidth = 0.2, color = \"grey90\"),\n    plot.title = element_text(face = \"bold\")\n  )"
+  },
+  {
+    "objectID": "mp03.html#setup-for-api-download",
+    "href": "mp03.html#setup-for-api-download",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "2.1 Setup for API download",
+    "text": "2.1 Setup for API download\n\n\nCode\nlibrary(httr2)\nlibrary(purrr)\nlibrary(sf)\n\nsoc_base &lt;- \"https://data.cityofnewyork.us/resource/hn5i-inap.geojson\"\n\nfetch_tree_pages &lt;- function(limit = 50000, max_pages = 25, dest_dir = \"data/mp03\") {\n  dir.create(dest_dir, recursive = TRUE, showWarnings = FALSE)\n  files &lt;- c()\n  i &lt;- 0L\n\n  repeat {\n    offset &lt;- i * limit\n    out_file &lt;- file.path(dest_dir, sprintf(\"trees_page_%03d.geojson\", i))\n\n    if (!file.exists(out_file)) {\n\n      req &lt;- request(soc_base) |&gt;\n        req_url_query(\n          `$limit` = limit,\n          `$offset` = offset,\n          `$select` = \"*\"        # ← REQUIRED !!!\n        ) |&gt;\n        req_user_agent(\"STA9750-mp03\") |&gt;\n        req_timeout(120)\n\n      resp &lt;- req_perform(req)\n      raw &lt;- resp_body_raw(resp)\n      if (length(raw) &lt; 1000L) break\n      writeBin(raw, out_file)\n    }\n\n    files &lt;- c(files, out_file)\n\n    g &lt;- tryCatch(st_read(out_file, quiet = TRUE), error = function(e) NULL)\n    n &lt;- if (!is.null(g)) nrow(g) else limit\n\n    if (n &lt; limit) break\n    i &lt;- i + 1L\n    if (i &gt;= max_pages) break\n  }\n\n  files\n}"
+  },
+  {
+    "objectID": "mp03.html#download-a-small-test-sample-for-speed",
+    "href": "mp03.html#download-a-small-test-sample-for-speed",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "2.2 Download a small test sample (for speed)",
+    "text": "2.2 Download a small test sample (for speed)\n\n\nCode\ntree_files &lt;- fetch_tree_pages(limit = 50000, max_pages = 25)\ntree_files\n\n\n[1] \"data/mp03/trees_page_000.geojson\""
+  },
+  {
+    "objectID": "mp03.html#read-and-combine-all-tree-data",
+    "href": "mp03.html#read-and-combine-all-tree-data",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "2.3 Read and combine all tree data",
+    "text": "2.3 Read and combine all tree data\n\n\nCode\nread_trees &lt;- function(files) {\npurrr::map(files, ~ suppressWarnings(st_read(.x, quiet = TRUE))) |&gt;\nlist_rbind()\n}\n\ntrees_sf &lt;- read_trees(tree_files)\n\nif (is.na(st_crs(trees_sf))) {\ntrees_sf &lt;- st_set_crs(trees_sf, \"WGS84\")\n}\n\n# Check full data size\n\nnrow(trees_sf)\n\n\n[1] 20000"
+  },
+  {
+    "objectID": "mp03.html#spatial-join-trees-districts",
+    "href": "mp03.html#spatial-join-trees-districts",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "🧩Spatial Join (trees + districts)",
+    "text": "🧩Spatial Join (trees + districts)\nWe’ll use st_join() to attach each tree to the district polygon it lies in.\n\n\nCode\n# Join tree points to council districts\n\ntrees_joined &lt;- st_join(trees_sf, districts, join = st_intersects)\ntrees_joined\n\n\n\n\nCode\n# Task 4 summary table\n\nby_dist &lt;- trees_joined %&gt;%\n  st_drop_geometry() %&gt;%\n  group_by(CounDist) %&gt;%\n  summarise(\n    total_trees = n(),\n    dead_trees = sum(tpcondition == \"Dead\", na.rm = TRUE),\n    Shape_Area = mean(Shape_Area, na.rm = TRUE)\n  ) %&gt;%\n  mutate(\n    tree_density = total_trees / Shape_Area,\n    dead_frac = dead_trees / total_trees\n  )"
+  },
+  {
+    "objectID": "mp03.html#compute-tree-counts-density-and-dead-trees",
+    "href": "mp03.html#compute-tree-counts-density-and-dead-trees",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "🧮 4.2 Compute Tree Counts, Density, and Dead Trees",
+    "text": "🧮 4.2 Compute Tree Counts, Density, and Dead Trees\n\n\nCode\nlibrary(dplyr)\n\n# Calculate per-district statistics\n\nby_dist &lt;- trees_joined |&gt;\nst_drop_geometry() |&gt;                     # Drop geometry to work as normal table\ngroup_by(CounDist) |&gt;\nsummarize(\ntotal_trees = n(),\ndead_trees = sum(tolower(tpcondition) %in% c(\"dead\", \"stump\"), na.rm = TRUE),\n.groups = \"drop\"\n) |&gt;\nleft_join(st_drop_geometry(districts) |&gt; select(CounDist, Shape_Area), by = \"CounDist\") |&gt;\nmutate(\ntree_density = total_trees / Shape_Area,\ndead_frac = dead_trees / total_trees\n)\n\nby_dist |&gt;\n  select(CounDist, total_trees, dead_trees, Shape_Area, tree_density, dead_frac) |&gt;\n  arrange(CounDist) |&gt;\n  kable()\n\n\n\n\n\n\n\n\n\n\n\n\n\nCounDist\ntotal_trees\ndead_trees\nShape_Area\ntree_density\ndead_frac\n\n\n\n\n1\n173\n21\n78106503\n2.2e-06\n0.1213873\n\n\n2\n232\n40\n48322121\n4.8e-06\n0.1724138\n\n\n3\n319\n48\n76315832\n4.2e-06\n0.1504702\n\n\n4\n316\n53\n66802515\n4.7e-06\n0.1677215\n\n\n5\n189\n22\n37752246\n5.0e-06\n0.1164021\n\n\n6\n198\n34\n82672687\n2.4e-06\n0.1717172\n\n\n7\n183\n36\n55186140\n3.3e-06\n0.1967213\n\n\n8\n138\n40\n106989876\n1.3e-06\n0.2898551\n\n\n9\n183\n31\n56263769\n3.3e-06\n0.1693989\n\n\n10\n131\n24\n76997844\n1.7e-06\n0.1832061\n\n\n11\n235\n104\n216987852\n1.1e-06\n0.4425532\n\n\n12\n177\n48\n131040796\n1.4e-06\n0.2711864\n\n\n13\n433\n161\n328361699\n1.3e-06\n0.3718245\n\n\n14\n64\n22\n52585062\n1.2e-06\n0.3437500\n\n\n15\n78\n37\n102495308\n8.0e-07\n0.4743590\n\n\n16\n80\n48\n62082481\n1.3e-06\n0.6000000\n\n\n17\n132\n48\n115113830\n1.1e-06\n0.3636364\n\n\n18\n150\n64\n110601770\n1.4e-06\n0.4266667\n\n\n19\n756\n207\n334738191\n2.3e-06\n0.2738095\n\n\n20\n273\n105\n144833269\n1.9e-06\n0.3846154\n\n\n21\n125\n42\n130912211\n1.0e-06\n0.3360000\n\n\n22\n217\n77\n150395658\n1.4e-06\n0.3548387\n\n\n23\n630\n205\n311520682\n2.0e-06\n0.3253968\n\n\n24\n353\n126\n186824791\n1.9e-06\n0.3569405\n\n\n25\n165\n44\n63861388\n2.6e-06\n0.2666667\n\n\n26\n195\n72\n168180998\n1.2e-06\n0.3692308\n\n\n27\n405\n122\n210809911\n1.9e-06\n0.3012346\n\n\n28\n361\n86\n175137630\n2.1e-06\n0.2382271\n\n\n29\n328\n109\n127849354\n2.6e-06\n0.3323171\n\n\n30\n505\n150\n168734193\n3.0e-06\n0.2970297\n\n\n31\n359\n138\n507654144\n7.0e-07\n0.3844011\n\n\n32\n506\n186\n358667790\n1.4e-06\n0.3675889\n\n\n33\n242\n70\n110198297\n2.2e-06\n0.2892562\n\n\n34\n296\n67\n105180459\n2.8e-06\n0.2263514\n\n\n35\n494\n80\n79440619\n6.2e-06\n0.1619433\n\n\n36\n205\n46\n76224396\n2.7e-06\n0.2243902\n\n\n37\n129\n35\n101031674\n1.3e-06\n0.2713178\n\n\n38\n408\n89\n151771974\n2.7e-06\n0.2181373\n\n\n39\n489\n129\n118294553\n4.1e-06\n0.2638037\n\n\n40\n216\n32\n73666390\n2.9e-06\n0.1481481\n\n\n41\n312\n43\n79271987\n3.9e-06\n0.1378205\n\n\n42\n189\n29\n201334162\n9.0e-07\n0.1534392\n\n\n43\n208\n39\n75477511\n2.8e-06\n0.1875000\n\n\n44\n349\n62\n99194858\n3.5e-06\n0.1776504\n\n\n45\n355\n64\n117904762\n3.0e-06\n0.1802817\n\n\n46\n556\n53\n277719690\n2.0e-06\n0.0953237\n\n\n47\n583\n82\n147530657\n4.0e-06\n0.1406518\n\n\n48\n586\n101\n109815036\n5.3e-06\n0.1723549\n\n\n49\n852\n230\n330301028\n2.6e-06\n0.2699531\n\n\n50\n3332\n571\n665196534\n5.0e-06\n0.1713685\n\n\n51\n1610\n392\n657989092\n2.4e-06\n0.2434783\n\n\n\n\n\n✅ This gives you a clean summary of:\n\nTotal trees per district: District 50\nDensity (trees per area): District 35\nDead tree fraction: District 16"
+  },
+  {
+    "objectID": "mp03.html#identify-key-districts",
+    "href": "mp03.html#identify-key-districts",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "🌟 4.3 Identify Key Districts",
+    "text": "🌟 4.3 Identify Key Districts\n\n\nCode\n# Most trees\n\nmost_trees &lt;- by_dist |&gt; arrange(desc(total_trees)) |&gt; slice(1)\n\n# Highest density\n\nhighest_density &lt;- by_dist |&gt; arrange(desc(tree_density)) |&gt; slice(1)\n\n# Highest dead fraction\n\nhighest_dead_frac &lt;- by_dist |&gt; filter(total_trees &gt; 50) |&gt; arrange(desc(dead_frac)) |&gt; slice(1)\n\nkey_districts &lt;- bind_rows(\n  most_trees |&gt; mutate(category = \"Most Trees\"),\n  highest_density |&gt; mutate(category = \"Highest Density\"),\n  highest_dead_frac |&gt; mutate(category = \"Highest Dead Fraction\")\n) |&gt;\n  select(category, CounDist, total_trees, dead_trees, Shape_Area, tree_density, dead_frac)\n\nkable(key_districts)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\ncategory\nCounDist\ntotal_trees\ndead_trees\nShape_Area\ntree_density\ndead_frac\n\n\n\n\nMost Trees\n50\n3332\n571\n665196534\n5.0e-06\n0.1713685\n\n\nHighest Density\n35\n494\n80\n79440619\n6.2e-06\n0.1619433\n\n\nHighest Dead Fraction\n16\n80\n48\n62082481\n1.3e-06\n0.6000000\n\n\n\n\n\n✅ The top districts in each category."
+  },
+  {
+    "objectID": "mp03.html#most-common-tree-species-in-manhattan",
+    "href": "mp03.html#most-common-tree-species-in-manhattan",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "4.4 Most common tree species in Manhattan",
+    "text": "4.4 Most common tree species in Manhattan\n\n\nCode\ntrees_joined &lt;- trees_joined %&gt;%\n  mutate(\n    borough = case_when(\n      CounDist &gt;= 1  & CounDist &lt;= 10 ~ \"Manhattan\",\n      CounDist &gt;= 11 & CounDist &lt;= 18 ~ \"Bronx\",\n      CounDist &gt;= 19 & CounDist &lt;= 32 ~ \"Queens\",\n      CounDist &gt;= 33 & CounDist &lt;= 48 ~ \"Brooklyn\",\n      CounDist &gt;= 49 & CounDist &lt;= 51 ~ \"Staten Island\",\n      TRUE ~ NA_character_\n    )\n  )\nmost_common_manhattan &lt;- trees_joined %&gt;%\n  filter(borough == \"Manhattan\") %&gt;%\n  st_drop_geometry() %&gt;%\n  count(genusspecies, sort = TRUE) %&gt;%\n  slice(1)\n\nmost_common_manhattan\n\n\n                                                genusspecies   n\n1 Gleditsia triacanthos var. inermis - Thornless honeylocust 399\n\n\n\nTop 10 Most Common Species in Manhattan (Bar Plot)\n\n\nCode\nlibrary(ggplot2)\nlibrary(dplyr)\n\n# Top 10 species in Manhattan\ntop10_manhattan &lt;- trees_joined %&gt;%\n  filter(borough == \"Manhattan\") %&gt;%\n  st_drop_geometry() %&gt;%\n  count(genusspecies, sort = TRUE) %&gt;%\n  slice_head(n = 10)\n\ntop10_manhattan\n\n\n                                                 genusspecies   n\n1  Gleditsia triacanthos var. inermis - Thornless honeylocust 399\n2                             Pyrus calleryana - Callery pear 218\n3                    Platanus x acerifolia - London planetree 215\n4                          Zelkova serrata - Japanese zelkova 179\n5              Styphnolobium japonicum - Japanese pagoda tree 173\n6                           Tilia cordata - littleleaf linden 165\n7                             Ginkgo biloba - maidenhair tree 125\n8                                 Quercus palustris - pin oak 114\n9                                           Unknown - Unknown  39\n10                             Ulmus americana - American elm  37\n\n\nCode\n# Bar plot\nggplot(top10_manhattan, aes(x = n, y = reorder(genusspecies, n))) +\n  geom_col(fill = \"#2E86C1\") +\n  labs(\n    title = \"Top 10 Most Common Tree Species in Manhattan\",\n    x = \"Number of Trees\",\n    y = \"Species\"\n  ) +\n  theme_minimal(base_size = 12)"
+  },
+  {
+    "objectID": "mp03.html#title-replant-revive-thornless-honeylocust-initiative-in-district-4-midtown-east",
+    "href": "mp03.html#title-replant-revive-thornless-honeylocust-initiative-in-district-4-midtown-east",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Title: “Replant & Revive: Thornless Honeylocust Initiative in District 4 (Midtown East)”",
+    "text": "Title: “Replant & Revive: Thornless Honeylocust Initiative in District 4 (Midtown East)”\n\nDistrict 4 Overview:\nCouncil District 4 covers Midtown East, Murray Hill, and Kips Bay — a dense commercial and residential area that includes Baruch College. While the district has a healthy urban canopy, data from the Forestry Tree Points sample shows that it has one of the lower tree densities relative to its land area compared to nearby Manhattan districts. Increasing tree cover here would improve shade, pedestrian comfort, and air quality in heavily trafficked zones."
+  },
+  {
+    "objectID": "mp03.html#proposed-project-description",
+    "href": "mp03.html#proposed-project-description",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Proposed Project Description",
+    "text": "Proposed Project Description\nWe propose the Replant & Revive program, a one-year initiative led by the NYC Parks Department to replace dead and stump trees and add new Thornless Honeylocust ( Gleditsia triacanthos var. inermis ) trees along East 23rd to 30th Streets. This species thrives in compact soils and high-traffic areas, making it ideal for District 4’s urban environment.\n\nScope of Work:\n\nPlant 250 new Honeylocust trees\nRemove 60 dead or stump trees (as identified by tpcondition == “Dead” or “Stump”)\nProvide two-year maintenance (watering & pruning) to ensure survival"
+  },
+  {
+    "objectID": "mp03.html#why-district-4",
+    "href": "mp03.html#why-district-4",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Why District 4?",
+    "text": "Why District 4?\n\n1️⃣ Zoomed-in Map of District 4 With All Trees\n\n\nCode\ndistrict4 &lt;- districts %&gt;% filter(CounDist == 4)\n\ntrees_d4 &lt;- trees_joined %&gt;% filter(CounDist == 4)\n\nggplot() +\ngeom_sf(data = district4, fill = \"lightyellow\", color = \"black\") +\ngeom_sf(data = trees_d4, color = \"darkgreen\", alpha = 0.5, size = 0.8) +\nlabs(\ntitle = \"Tree Distribution in District 4\",\nsubtitle = \"Zoomed-In View Showing All Trees\",\ncaption = \"Source: NYC Open Data\"\n) +\ntheme_minimal()\n\n\n\n\n\n\n\n\n\nCompared with peer Manhattan districts:\n\n\n\n\n\n\n\n\n\nDistrict\nTotal Trees\nDead Tree %\nTree Density (per sq. meter)\n\n\n\n\nDistrict 4\n316\nHigh\nLower mid range\n\n\nDistrict 3\nHigher\nLower\nHigher\n\n\nDistrict 6\nHigher\nLower\nHigher\n\n\nDistrict 10\nMuch Higher\nLower\nHighest\n\n\n\nDistrict 4 shows one of the highest proportions of declining-condition trees relative to its size and a lower canopy density compared with adjacent districts.\n\n\nMap-Based Comparison of District 4 vs District 10\n\n\nCode\nd4 &lt;- districts %&gt;% filter(CounDist == 4)\nd10 &lt;- districts %&gt;% filter(CounDist == 10)\n\ntrees_d10 &lt;- trees_joined %&gt;% filter(CounDist == 10)\n\nggplot() +\ngeom_sf(data = d4, fill = \"lightblue\", alpha = 0.4) +\ngeom_sf(data = trees_d4, color = \"green\", size = 0.4, alpha = 0.5) +\ngeom_sf(data = d10, fill = \"pink\", alpha = 0.4) +\ngeom_sf(data = trees_d10, color = \"red\", size = 0.4, alpha = 0.5) +\nlabs(\ntitle = \"District 4 vs District 10 — Tree Coverage\",\nsubtitle = \"District 10 has significantly denser canopy coverage\",\ncaption = \"NYC Open Data\"\n) +\ntheme_minimal()\n\n\n\n\n\n\n\n\n\nTherefore, District 4 benefits most from targeted replanting and maintenance."
+  },
+  {
+    "objectID": "mp03.html#conclusion",
+    "href": "mp03.html#conclusion",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Conclusion",
+    "text": "Conclusion\nThis proposal supports NYC Parks’ mission to expand equitable green spaces. By improving District 4’s street trees, we create a healthier, cooler, and more welcoming neighborhood for residents, commuters, and visitors."
+  },
+  {
+    "objectID": "mp03.html#tree-closest-to-baruch-college",
+    "href": "mp03.html#tree-closest-to-baruch-college",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "📍4.5 Tree Closest to Baruch College",
+    "text": "📍4.5 Tree Closest to Baruch College\n\n\nCode\n# Define a helper to make a point from latitude and longitude\nnew_st_point &lt;- function(lat, lon) {\n  st_sfc(st_point(c(lon, lat)), crs = \"WGS84\")\n}\n\n# Baruch College coordinates (25th Street & Lexington Ave)\nbaruch_pt &lt;- new_st_point(lat = 40.740173, lon = -73.98337)\n\n# Compute distances from each tree to Baruch\ntrees_joined &lt;- trees_joined |&gt;\n  mutate(distance = as.numeric(st_distance(geometry, baruch_pt)))\n\n# Find the single closest tree\nclosest_baruch &lt;- trees_joined |&gt;\n  arrange(distance) |&gt;\n  slice(1) |&gt;\n  st_drop_geometry() |&gt;\n  select(genusspecies, tpcondition, distance)\n\nclosest_baruch\n\n\n                     genusspecies tpcondition distance\n1 Pyrus calleryana - Callery pear        Fair 112.8705\n\n\nThe tree located closest to Baruch College (40.7401° N, −73.9833° W) is a Callery Pear (Pyrus calleryana), in fair condition, approximately 113 meters away. Although not a native species, Callery Pears are commonly used as ornamental street trees in dense neighborhoods like Midtown due to their symmetrical shape and white spring blossoms.\n\n🧠Extra Visualization\n\n\nCode\nggplot() +\n  geom_sf(data = districts, fill = NA, color = \"grey70\") +\n  geom_sf(data = trees_sf, color = \"darkgreen\", alpha = 0.05, size = 0.2) +\n  geom_sf(data = baruch_pt, color = \"red\", size = 2) +\n  labs(\n    title = \"Tree Closest to Baruch College\",\n    subtitle = \"Red dot marks Baruch College; green dots represent trees\",\n    caption = \"Source: NYC Open Data – Forestry Tree Points\"\n  ) +\n  theme_minimal()"
+  },
+  {
+    "objectID": "mp03.html#expected-impact",
+    "href": "mp03.html#expected-impact",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Expected Impact",
+    "text": "Expected Impact\n\nIncrease canopy coverage by ≈ 12 % in District 4 within two years\nImprove local air quality and cooling by adding shade near sidewalks\nSupport urban biodiversity through consistent species selection\nEngage residents and students through a “Community Plant-Day” led by Baruch College’s Sustainability Club"
+  },
+  {
+    "objectID": "mp03.html#most-trees",
+    "href": "mp03.html#most-trees",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "4.1 Most trees",
+    "text": "4.1 Most trees\n\n\nCode\nmost_trees_dist &lt;- by_dist %&gt;%\n  arrange(desc(total_trees)) %&gt;%\n  slice(1) %&gt;%\n  select(CounDist, total_trees)\n\nmost_trees_dist\n\n\n# A tibble: 1 × 2\n  CounDist total_trees\n     &lt;int&gt;       &lt;int&gt;\n1       50        3332"
+  },
+  {
+    "objectID": "mp03.html#highest-density-of-trees",
+    "href": "mp03.html#highest-density-of-trees",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "4.2 Highest density of trees",
+    "text": "4.2 Highest density of trees\n\n\nCode\nhighest_density_dist &lt;- by_dist %&gt;%\n  arrange(desc(tree_density)) %&gt;%\n  slice(1) %&gt;%\n  select(CounDist, tree_density)\n\nhighest_density_dist\n\n\n# A tibble: 1 × 2\n  CounDist tree_density\n     &lt;int&gt;        &lt;dbl&gt;\n1       35   0.00000622"
+  },
+  {
+    "objectID": "mp03.html#highest-fraction-of-dead-trees",
+    "href": "mp03.html#highest-fraction-of-dead-trees",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "4.3 Highest fraction of dead trees",
+    "text": "4.3 Highest fraction of dead trees\n\n\nCode\nhighest_dead_frac_dist &lt;- by_dist %&gt;%\n  filter(total_trees &gt; 50) %&gt;%\n  arrange(desc(dead_frac)) %&gt;%\n  slice(1) %&gt;%\n  select(CounDist, dead_frac)\n\nhighest_dead_frac_dist\n\n\n# A tibble: 1 × 2\n  CounDist dead_frac\n     &lt;int&gt;     &lt;dbl&gt;\n1       16       0.6"
+  },
+  {
+    "objectID": "mp03.html#tree-closest-to-baruchs-campus",
+    "href": "mp03.html#tree-closest-to-baruchs-campus",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "4.5 Tree closest to Baruch’s campus",
+    "text": "4.5 Tree closest to Baruch’s campus\n\n\nCode\n# Define a helper to make a point from latitude and longitude\nnew_st_point &lt;- function(lat, lon) {\n  st_sfc(st_point(c(lon, lat)), crs = \"WGS84\")\n}\n\n# Baruch College coordinates (25th Street & Lexington Ave)\nbaruch_pt &lt;- new_st_point(lat = 40.740173, lon = -73.98337)\n\n# Compute distances from each tree to Baruch\ntrees_joined &lt;- trees_joined |&gt;\n  mutate(distance = as.numeric(st_distance(geometry, baruch_pt)))\n\n# Find the single closest tree\nclosest_baruch &lt;- trees_joined |&gt;\n  arrange(distance) |&gt;\n  slice(1) |&gt;\n  st_drop_geometry() |&gt;\n  select(genusspecies, tpcondition, distance)\n\nclosest_baruch\n\n\n                     genusspecies tpcondition distance\n1 Pyrus calleryana - Callery pear        Fair 112.8705\n\n\n\nVisualization Tree closest to Baruch’s campus\n\n\nCode\nggplot() +\n  geom_sf(data = districts, fill = NA, color = \"grey70\") +\n  geom_sf(data = trees_sf, color = \"darkgreen\", alpha = 0.05, size = 0.2) +\n  geom_sf(data = baruch_pt, color = \"red\", size = 2) +\n  labs(\n    title = \"Tree Closest to Baruch College\",\n    subtitle = \"Red dot marks Baruch College; green dots represent trees\",\n    caption = \"Source: NYC Open Data – Forestry Tree Points\"\n  ) +\n  theme_minimal()"
+  },
+  {
+    "objectID": "mp03.html#overview",
+    "href": "mp03.html#overview",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Overview",
+    "text": "Overview\nNew York City’s District 4 (Midtown East, Murray Hill, Kips Bay) has one of Manhattan’s highest pedestrian use areas but comparatively lower healthy tree density. Many locations have aging trees, declining health ratings, or residual stumps that reduce canopy coverage and shade availability.\nThis proposal recommends a District-focused maintenance and replanting program to strengthen canopy equity, reduce heat exposure, and improve neighborhood sustainability."
+  },
+  {
+    "objectID": "mp03.html#proposed-project",
+    "href": "mp03.html#proposed-project",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Proposed Project",
+    "text": "Proposed Project\n“45 Healthy Trees for District 4” Initiative, which includes:\n\nRemoving 30 damaged or dead trees (based on tpcondition assessment).\nPlanting 45 new street trees in priority locations near schools, senior centers, and high-traffic pedestrian corridors.\nProviding risk-rating inspections for ~200 existing trees marked as “Fair” condition."
+  },
+  {
+    "objectID": "mp03.html#why-this-project-matters",
+    "href": "mp03.html#why-this-project-matters",
+    "title": "Mini-Project #03: Visualizing & Maintaining NYC’s Green Canopy",
+    "section": "Why This Project Matters",
+    "text": "Why This Project Matters\n\nIncreases shade and reduces summer heat exposure\nSupports biodiversity with new species\nImproves air quality in a high-traffic zone\nEnhances visual appeal and pedestrian comfort\nBuilds long-term resilience in NYC’s urban forest"
   }
 ]
