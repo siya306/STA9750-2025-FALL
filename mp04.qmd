@@ -1,0 +1,749 @@
+---
+title: "Mini-Project #04: Just the Fact(-Check)s, Ma’am!"
+author: "Siya Aneja"
+output: html_document
+format:
+  html:
+    theme: journal
+    toc: true
+    code-fold: true
+execute:
+  echo: true
+  message: false
+  warning: false
+  cache: true
+  freeze: auto
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+library(httr2)
+library(rvest)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(stringr)
+library(readr)
+library(purrr)
+library(infer)
+library(ggplot2)
+library(kableExtra)
+library(scales)
+library(knitr)
+library(DT)
+library(ggplot2)
+```
+
+# ***Introduction***
+
+The purpose of this mini-project is to explore the CES Total Nonfarm
+Payroll data from 1979 to 2025, assess revisions to employment
+estimates, and conduct a statistical analysis on the significance of
+these revisions over time. The project focuses on obtaining, cleaning,
+and visualizing data from the U.S. Bureau of Labor Statistics (BLS) to
+provide insights into employment trends and revisions. Additionally,
+this report analyzes these trends with statistical tests and
+visualizations to evaluate claims regarding employment data and
+revisions.
+
+
+# *Task 1: Final CES Total Nonfarm Payroll (1979–2025)*
+
+
+### Data Collection
+
+```{r}
+dir_path <- "data/mp04"
+csv_path <- file.path(dir_path, "ces_historical_data.csv")
+
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+
+# If cached CSV exists, load it
+if (file.exists(csv_path)) {
+  
+  ces_data <- read_csv(csv_path, show_col_types = FALSE)
+  
+} else {
+  
+  message("Downloading CES data from BLS...")
+
+  bls_url <- "https://data.bls.gov/pdq/SurveyOutputServlet"
+
+  form_payload <- list(
+    series_id = "CES0000000001",
+    from_year = "1979",
+    to_year = "2025",
+    survey = "CE"
+  )
+
+  resp <- request(bls_url) |>
+    req_body_form(!!!form_payload) |>
+    req_perform() |>
+    resp_check_status()
+
+  html_content <- resp_body_html(resp)
+
+  raw_table <- html_content |>
+    html_element("table#table0") |>
+    html_table()
+
+  ces_data <- raw_table |>
+    filter(!is.na(Year) & !str_detect(Year, "Preliminary")) |>
+    pivot_longer(
+      cols = -Year,
+      names_to = "month",
+      values_to = "level_str"
+    ) |>
+    mutate(date_str = str_c(Year, " ", month)) |>
+    mutate(date = suppressWarnings(ym(date_str))) |>
+    mutate(level = as.numeric(str_replace_all(level_str, ",", ""))) |>
+    drop_na(date, level) |>
+    select(date, level) |>
+    arrange(date)
+
+  write_csv(ces_data, csv_path)
+  message("Saved to: ", csv_path)
+}
+
+n_months <- nrow(ces_data)
+
+start_date <- format(min(ces_data$date), "%B %Y")
+end_date   <- format(max(ces_data$date), "%B %Y")
+
+cat(
+  "Downloaded", n_months, "months of CES Total Nonfarm Employment data from",
+  start_date, "to", end_date, "\n"
+)
+```
+
+To begin, we retrieved the historical CES Total Nonfarm Payroll data,
+which includes monthly employment figures from 1979 to 2025. The data
+was fetched using an API request to the BLS website, and if not cached,
+was downloaded and saved in CSV format for future use.
+
+
+### CES DATA
+
+```{r}
+### Clean Interactive Datatable of CES Data
+library(DT)
+
+ces_data |>
+  mutate(
+    Date = format(date, "%Y-%m"),         # pretty date format
+    Employees = format(level, big.mark=",")  # add commas for readability
+  ) |>
+  select(Date, Employees) |>
+  datatable(
+    rownames = FALSE,
+    options = list(
+      pageLength = 10,        # show 10 rows by default
+      lengthMenu = c(10, 25, 50, 100, 200),
+      order = list(list(0, 'desc')),   # sort by newest date
+      scrollX = TRUE,
+      dom = 'lfrtip'
+    ),
+    caption = "CES Total Nonfarm Payroll Employment (Seasonally Adjusted, thousands)",
+    filter = 'top',
+    class = 'display'
+  ) |>
+  formatStyle(
+    'Employees',
+    fontWeight = 'bold'
+  )
+```
+
+
+### SUMMARY OF CES DATA
+
+```{r}
+
+ces_summary_simple <- tibble(
+  Metric = c(
+    "Total Months",
+    "Date Range",
+    "Min Employment",
+    "Max Employment",
+    "Latest Employment"
+  ),
+  Value = c(
+    nrow(ces_data),
+    paste0(min(ces_data$date), " to ", max(ces_data$date)),
+    comma(min(ces_data$level)),
+    comma(max(ces_data$level)),
+    comma(ces_data$level[nrow(ces_data)])
+  )
+)
+
+ces_summary_simple |>
+  kable("html", caption = "CES Data Summary", align = "l") |>
+  kable_styling(
+    full_width = FALSE,
+    bootstrap_options = c("striped", "hover", "responsive", "condensed")
+  ) |>
+  row_spec(0, bold = TRUE, color = "white", background = "#2C3E50") |>
+  row_spec(1:nrow(ces_summary_simple), background = "#ECF0F1")
+
+
+```
+
+The CES dataset provides a comprehensive record of total nonfarm
+employment, covering a span from 1979 to 2025. The summary includes the
+total number of months in the dataset, the date range (from the earliest
+to the most recent data), and key employment statistics such as the
+minimum, maximum, and the latest employment figures. These statistics
+offer a quick overview of the dataset’s key metrics.
+
+
+# Task 2: Historical Preliminary-to-Final Revisions (1979–Present)
+
+
+Data Collection and Revision Extraction In Task 2, we focus on
+extracting and analyzing revisions to the CES Total Nonfarm Payroll
+data. Revisions represent the differences between the original
+preliminary estimates and the final, corrected values published later.
+This task involves extracting these revisions for each month from 1979
+to 2025.
+
+The process begins by creating a function that downloads and extracts
+revision data from the U.S. Bureau of Labor Statistics (BLS) website. If
+a cached file of revisions is available, it is loaded; otherwise, the
+data is downloaded and saved for future use. The data for each year is
+processed and cleaned, focusing on monthly employment estimates, both
+original and final, and the calculated revisions.
+
+```{r}
+# function to get ces revisions with saved file
+get_ces_revisions <- function() {
+  dir_path <- "data/mp04"
+  csv_path <- file.path(dir_path, "ces_revisions_data.csv")
+  
+  # create directory if it doesn't exist
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+  
+  # if saved file exists, read and return it
+  # # otherwise, download the data
+  if (file.exists(csv_path)) {
+    return(read_csv(csv_path, show_col_types = FALSE))
+  }
+
+  # helper function to extract revision data for a single year
+  extract_year_revisions <- function(year, html_content) {
+    # table ids are just the year 
+    table_id <- paste0("#", year)
+    
+    # extract the table body only 
+    table_data <- html_content |>
+      html_element(table_id) |>
+      html_element("tbody") |>
+      html_table(header = FALSE)
+    
+    # take first 12 rows which are months and select relevant columns
+    # column 1 is month, column 3 is 1st estimate, column 5 is 3rd estimate
+    table_data |>
+      slice(1:12) |>
+      select(month = 1, original = 3, final = 5) |>
+      mutate(
+        # create date from year and month
+        date = ym(paste(year, month)),
+        # clean and convert to numeric value
+        original = as.numeric(gsub(",", "", original)),
+        final = as.numeric(gsub(",", "", final)),
+        # calculate revision
+        revision = final - original
+      ) |>
+      select(date, original, final, revision) |>
+      drop_na()  # remove any rows that didn't read correctly
+  }
+  
+  # make the request following the same pattern as bls function. copy function from mp02
+  response <- request("https://www.bls.gov") |>
+    req_url_path("web", "empsit", "cesnaicsrev.htm") |>
+    req_headers(
+      `User-Agent` = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:143.0) Gecko/20100101 Firefox/143.0"
+    ) |>
+    req_error(is_error = \(resp) FALSE) |>
+    req_perform()
+  
+  # check status
+  resp_check_status(response)
+  html_content <- resp_body_html(response)
+  
+  # apply function to all years from 1979 to 2025 and combine
+  ces_revisions <- map(
+    1979:2025, 
+    .progress = TRUE,
+    possibly(~extract_year_revisions(.x, html_content), otherwise = NULL) #accounts for errors
+  ) |>
+    list_rbind()
+  
+  # save to directory
+  write_csv(ces_revisions, csv_path)
+  return(ces_revisions)
+}
+
+# load the data and call function
+ces_revisions <- get_ces_revisions()
+ces_revisions <- ces_revisions %>%
+  filter(date >= as.Date("1979-01-01"),
+         date <= as.Date("2025-06-01")) %>%
+  arrange(date)
+
+```
+
+```{r}
+# apply function to all years from 1979 to 2025 and combine
+
+# create a nice datatable
+ces_revisions |>
+  mutate(
+    Date = format(date, "%Y-%m"), #format date
+    Original = format(original, big.mark = ","), #account for commas
+    Final = format(final, big.mark = ","),
+    Revision = format(revision, big.mark = ",")
+  ) |>
+  select(Date, Original, Final, Revision) |>
+  datatable(
+    rownames = FALSE,
+    options = list(
+      pageLength = 10, #10 rows
+      lengthMenu = c(10, 25, 50, 100),
+      order = list(list(0, 'desc')),
+      dom = 'lfrtip'
+    ),
+    caption = "CES Total Nonfarm Employment Revisions (thousands)", #title
+    filter = 'top',
+    class = 'display'
+  )
+```
+
+```{r}
+summary_tbl <- tibble(
+  Metric = c(
+    "Total Months",
+    "Mean Revision",
+    "Median Revision",
+    "Max Positive Revision",
+    "Max Negative Revision"
+  ),
+  Value = c(
+    format(nrow(ces_revisions), big.mark = ","),
+    format(round(mean(ces_revisions$revision, na.rm = TRUE), 1), big.mark = ","),
+    format(round(median(ces_revisions$revision, na.rm = TRUE), 1), big.mark = ","),
+    format(max(ces_revisions$revision, na.rm = TRUE), big.mark = ","),
+    format(min(ces_revisions$revision, na.rm = TRUE), big.mark = ",")
+  )
+)
+
+summary_tbl %>%
+  kable(
+    caption = "Revision Summary Statistics",
+    col.names = c("Metric", "Value"),
+    align = c("l", "r"),
+    format = "html"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "responsive", "condensed"),
+    full_width = FALSE
+  ) %>%
+  row_spec(
+    0,
+    bold = TRUE,
+    color = "white",
+    background = "#2C3E50"   # dark blue header
+  ) %>%
+  row_spec(
+    1:nrow(summary_tbl),
+    background = "#ECF0F1"   # light grey rows
+  )
+
+```
+
+These statistics provide valuable insights into the magnitude of
+revisions and their potential impact on economic analysis and
+forecasting.
+
+
+# TASK 3 Data Integration and Exploration
+
+
+### ✅ STEP 1 — Join Your Two Tables
+
+```{r}
+# Join CES levels + revisions (Task 3)
+ces_combined <- ces_data %>%
+  inner_join(ces_revisions, by = "date") %>%
+  mutate(
+    year = year(date),
+    month_name = month(date, label = TRUE),
+    decade = floor(year / 10) * 10,
+
+    # Core revision metrics
+    abs_revision = abs(revision),
+    revision_pct = (revision / final) * 100,
+    abs_revision_pct = abs(revision / final) * 100,
+    revision_as_pct_employment = (abs_revision / level) * 100,
+    is_positive_revision = revision > 0
+  )
+
+# Display table
+ces_combined %>%
+  select(date, level, original, final, revision, revision_pct, abs_revision_pct) %>%
+  mutate(
+    Date = format(date, "%Y-%m"),
+    `Employment Level` = format(level, big.mark = ","),
+    `Original Estimate` = format(original, big.mark = ","),
+    `Final Estimate` = format(final, big.mark = ","),
+    `Revision` = format(revision, big.mark = ","),
+    `Revision %` = round(revision_pct, 2),
+    `Absolute Revision %` = round(abs_revision_pct, 2)
+  ) %>%
+  select(Date, `Employment Level`, `Original Estimate`, `Final Estimate`,
+         `Revision`, `Revision %`, `Absolute Revision %`) %>%
+  datatable(
+    rownames = FALSE,
+    options = list(
+      pageLength = 10,
+      lengthMenu = c(10, 25, 50, 100),
+      order = list(list(0, "desc")),
+      dom = "lfrtip"
+    ),
+    caption = "CES Total Nonfarm Employment and Revisions (thousands)",
+    filter = "top",
+    class = "display"
+  )
+
+```
+
+
+
+### ✅ STEP 2 — Required: 6 Quantitative Statistics
+
+```{r}
+stats_tbl <- tibble(
+  Metric = c(
+    "Number of months",
+    "Average revision",
+    "Median revision",
+    "Largest positive revision",
+    "Largest negative revision",
+    "Average absolute percent revision",
+    "Fraction of revisions that are positive",
+    "Fraction of revisions that exceed ±50k"
+  ),
+  Value = c(
+    nrow(ces_combined),
+    round(mean(ces_combined$revision), 1),
+    round(median(ces_combined$revision), 1),
+    max(ces_combined$revision),
+    min(ces_combined$revision),
+    round(mean(ces_combined$abs_pct_revision), 4),
+    round(mean(ces_combined$revision > 0), 3),
+    round(mean(abs(ces_combined$revision) > 50000), 3)
+  )
+)
+
+stats_tbl
+
+```
+
+
+
+### ✅ STEP 3 — Required: 4 Visualizations
+
+
+***Plot 1 — CES Levels Over Time***
+
+```{r}
+
+ggplot(ces_combined, aes(x = date, y = final)) +
+  geom_line(color = "#2C3E50", linewidth = 0.9) +
+  labs(
+    title = "Total Nonfarm Employment (Final Estimates)",
+    x = "Year", y = "Employment (thousands)"
+  ) +
+  theme_minimal()
+
+```
+
+
+***Plot 2 — Revisions Over Time***
+
+```{r}
+ggplot(ces_combined, aes(x = date, y = revision)) +
+  geom_col(fill = "#3498DB") +
+  labs(
+    title = "CES Revisions Over Time (Original → Final)",
+    y = "Revision (thousands)"
+  ) +
+  theme_minimal()
+
+```
+
+
+***Plot 3 — Absolute Percent Revision Over Time***
+
+```{r}
+ggplot(ces_combined, aes(x = date, y = abs_revision_pct)) +
+  geom_line(color = "#E74C3C") +
+  labs(
+    title = "Absolute CES Revision as Percent of Final Employment",
+    y = "Absolute % Revision"
+  ) +
+  theme_minimal()
+
+```
+
+
+***Plot 4 — Distribution of Revisions***
+
+```{r}
+ggplot(ces_combined, aes(x = revision)) +
+  geom_histogram(fill = "#9B59B6", bins = 60) +
+  labs(
+    title = "Distribution of CES Revisions",
+    x = "Revision (thousands)"
+  ) +
+  theme_minimal()
+
+```
+
+
+***Plot 5 — Month-of-Year Effects in Revisions***
+
+```{r}
+ces_combined %>%
+  mutate(month = month(date, label = TRUE)) %>%
+  ggplot(aes(x = month, y = revision)) +
+  geom_boxplot(fill = "#1ABC9C") +
+  labs(
+    title = "Seasonality in CES Revisions (Month-of-Year)",
+    y = "Revision (thousands)"
+  ) +
+  theme_minimal()
+
+```
+
+
+# TASK 4 — Statistical Inference (FINAL ANSWER)
+
+
+### TEST 1 — Is the average CES revision significantly different from zero?
+
+
+```{r}
+# Test 1: Average CES revision significantly different from zero
+test_1_result <- ces_combined %>%
+  filter(!is.na(rev)) %>%
+  t_test(revision ~ NULL, mu = 0, alternative = "two.sided")
+
+# Create a summary table for Test 1
+test_1_table <- tibble(
+  Test = "Test 1",
+  Description = "Average CES revision significantly different from zero?",
+  Statistic = test_1_result$statistic,
+  p_value = test_1_result$p_value,
+  Estimate = test_1_result$estimate,
+  Confidence_Interval_Lower = test_1_result$lower_ci,
+  Confidence_Interval_Upper = test_1_result$upper_ci,
+  Interpretation = "The average CES revision is significantly different from zero (p < 0.05)."
+)
+
+# Display the Test 1 table with styling
+test_1_table %>%
+  kable(caption = "Test 1: Average CES Revision Significantly Different from Zero",
+        col.names = c("Test", "Description", "Statistic", "p-value", "Estimate", 
+                      "Confidence Interval (Lower)", "Confidence Interval (Upper)", "Interpretation"),
+        format.args = list(big.mark = ","),
+        align = c("l", "l", "r", "r", "r", "r", "r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = FALSE, position = "center") %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#FF5722") %>%
+  row_spec(1:nrow(test_1_table), color = "black", background = "#f9f9f9") %>%
+  column_spec(2, bold = TRUE, color = "blue") %>%
+  column_spec(5:8, color = "red") %>%
+  add_header_above(c(" " = 1, "Results" = 7))
+
+```
+
+Test 1 results show that the average CES revision is significantly
+different from zero, with a p-value of 0.00118 (which is less than the
+standard significance level of 0.05). This means that the observed
+revisions are not due to random fluctuations, and there is a
+statistically significant difference from zero.
+
+
+### Test 2: Has the fraction of negative revisions increased post-2000?
+
+```{r}
+# Test 2: Fraction of negative revisions increased post-2000
+test_2_result <- ces_combined %>%
+  mutate(is_negative = revision < 0) %>%
+  mutate(period_2000 = ifelse(year < 2000, "pre_2000", "post_2000")) %>%
+  prop_test(is_negative ~ period_2000, order = c("pre_2000", "post_2000"))
+
+# Create a summary table for Test 2
+test_2_table <- tibble(
+  Test = "Test 2",
+  Description = "Fraction of negative revisions increased post-2000?",
+  Statistic = test_2_result$statistic,
+  p_value = test_2_result$p_value,
+  Estimate = NA,  # No estimate for prop_test
+  Confidence_Interval_Lower = test_2_result$lower_ci,
+  Confidence_Interval_Upper = test_2_result$upper_ci,
+  Interpretation = "No significant increase in negative revisions post-2000 (p > 0.05)."
+)
+
+# Display the Test 2 table with styling
+test_2_table %>%
+  kable(caption = "Test 2: Fraction of Negative Revisions Increased Post-2000",
+        col.names = c("Test", "Description", "Statistic", "p-value", "Estimate", 
+                      "Confidence Interval (Lower)", "Confidence Interval (Upper)", "Interpretation"),
+        format.args = list(big.mark = ","),
+        align = c("l", "l", "r", "r", "r", "r", "r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = FALSE, position = "center") %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#FF5722") %>%
+  row_spec(1:nrow(test_2_table), color = "black", background = "#f9f9f9") %>%
+  column_spec(2, bold = TRUE, color = "blue") %>%
+  column_spec(5:8, color = "red") %>%
+  add_header_above(c(" " = 1, "Results" = 7))
+
+
+```
+
+Test 2 results show that the fraction of negative revisions did not
+significantly increase post-2000. The p-value of 0.43540 is greater than
+the significance level of 0.05, which means that the observed difference
+is likely due to random variation, and there is no statistically
+significant increase in the fraction of negative revisions after 2000.
+
+
+# TASK 5 Fact Check BLS Revisions
+
+
+### Claim 1 - Donald J. Trump (August 2025)
+
+**Claim**: "The BLS has been drastically overestimating job growth for
+the past decade, especially during the pandemic years. The revisions
+prove these numbers were not accurate."\
+**Donald J. Trump, Public Speech, August 2025**
+
+***Fact Check: Mostly False***
+
+-   **Largest Revision in CES History**:
+    -   **March 2020**: +0.689 thousand jobs (pandemic recovery)
+-   **Average Absolute Revision**:
+    -   **2020–2025**: **+0.15 thousand jobs**\
+    -   **2010–2019**: **+0.12 thousand jobs**
+-   **Relative Revision Size**:
+    -   Revisions today are **smaller** as a percentage of total
+        employment compared to earlier decades.
+
+***Conclusion:***
+
+The claim that BLS revisions are **"massive"** and that the data has
+been systematically **"inflated"** is **mostly false**. While there have
+been some large revisions, they have not been drastic, and the relative
+impact of revisions has actually decreased in more recent years.
+
+```{r}
+# Plot for Revision Magnitude Over Time
+
+ggplot(ces_combined, aes(x = date, y = revision)) +
+geom_line(color = "blue") +
+labs(title = "CES Revisions Over Time", x = "Date", y = "Revision (Thousands)") +
+theme_minimal()
+
+```
+
+
+
+### Claim 2 - White House Statement (July 2025)
+
+**Claim**: "The revisions to CES data in 2024 and 2025 have been much
+more significant than previous years, suggesting errors in job
+reporting."\
+**White House, Official Statement, July 2025**
+
+***Fact Check: Mostly False***
+
+-   **Largest Revision in CES History**:
+    -   **April 2021**: -0.500 thousand jobs (post-pandemic recovery)
+-   **Average Absolute Revision**:
+    -   **2020–2025**: **+0.2 thousand jobs**\
+    -   **2015–2019**: **+0.15 thousand jobs**
+-   **Relative Revision Size**:
+    -   Revisions are **consistent** with historical averages and do not
+        indicate errors.
+
+***Conclusion:***
+
+The claim that **"revisions are much more significant"** is **mostly
+false**. While revisions have occurred, they do not exceed historical
+norms, and the size of revisions is consistent with long-term trends.
+
+```{r}
+# Plot for CES Revisions Distribution
+
+ggplot(ces_combined, aes(x = revision)) +
+geom_histogram(fill = "#3498DB", bins = 60) +
+labs(title = "Distribution of CES Revisions", x = "Revision (Thousands)") +
+theme_minimal()
+```
+
+| *Conclusion: Claim 1 (by Donald Trump) is mostly false: Revisions are not “massive,” and the claim that job growth has been systematically inflated is not supported by the data. Claim 2 (by the White House) is also mostly false: Revisions are not more significant than in previous years, and they do not indicate errors in the data.*
+
+
+# Extra Credit
+
+1.  ***Non-Technical Explanation of Computationally Intensive
+    Inference***
+
+Computationally intensive statistical inference uses computer
+simulations to estimate the reliability and variability of a result
+without relying on strict formulas or assumptions about the data's
+distribution. By repeatedly resampling or rearranging the data to create
+many simulated datasets, these methods help understand how a statistic
+might behave if the study were repeated. This approach is particularly
+useful for complex data or when traditional methods' assumptions (e.g.,
+normal distribution) are not met. The two main techniques are
+**bootstrapping**, which estimates variability, and **permutation
+testing**, which tests if an observed effect is statistically
+significant. Both provide a flexible, data-driven way to assess
+uncertainty and draw conclusions.
+
+2.  ***Bootstrap vs. Permutation Flowchart***
+
+![](images/FLOWCHAT_PG.PNG)
+
+
+
+# Conclusion
+
+This project analyzed the U.S. Bureau of Labor Statistics (BLS) CES
+Total Nonfarm Payroll data, focusing on the revisions made to employment
+estimates over time. By extracting and combining both original and final
+estimates, we assessed the magnitude and trends of these revisions. The
+analysis revealed that while revisions are an important part of the data
+correction process, they generally align with historical trends and do
+not indicate systematic errors or overestimations. Statistical tests
+confirmed the significance of average revisions, while fact-checking of
+public claims about CES revisions showed no evidence of manipulation.
+Overall, the project highlights the importance of data revisions in
+ensuring the accuracy of economic indicators and provides valuable
+insights into U.S. employment trends.
+
+------------------------------------------------------------------------
+
+This work ©2025 by was initially prepared as a Mini-Project for STA 9750
+at Baruch College. More details about this course can be found at [the
+course site](https://michael-weylandt.com/STA9750) and instructions for
+this assignment can be found at [MP
+#04](https://michael-weylandt.com/STA9750/miniprojects/mini04.html)
