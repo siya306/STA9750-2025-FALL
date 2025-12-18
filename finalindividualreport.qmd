@@ -367,8 +367,8 @@ misleading inferences about national or regional obesity dynamics.
 
 Several limitations should be noted. The BRFSS relies on self-reported
 height and weight, which may underestimate true obesity prevalence.
-Additionally, annual estimates are subject to survey design changes,
-nonresponse bias, and sampling variability, particularly in large or
+Additionally, annual estimates are subject to survey design changes, non
+response bias, and sampling variability, particularly in large or
 demographically diverse states such as Florida.
 
 These limitations reinforce the importance of cautious interpretation,
