@@ -512,7 +512,6 @@ title = "NYC Tree Map (Interactive)"
 
 ```
 
-
 ------------------------------------------------------------------------
 
 This work ©2025 by was initially prepared as a Mini-Project for STA 9750

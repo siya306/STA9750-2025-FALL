@@ -23,3 +23,8 @@ Rplot.png
 # allow Quarto build assets inside docs/
 !docs/*_files/**
 !docs/site_libs/**
+.DS_Store
+.RData*
+docs/site_libs/
+
+x
